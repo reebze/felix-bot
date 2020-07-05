@@ -2,6 +2,7 @@
     "discord_token" : "NzI4OTg4MjIyMjMwNjI2MzEy.XwCZyg.3I5a98uOfsCZvYLir0DJj8NIgt4",
     "felix_server_id" : 728988042987307091,
     "prefix" : "феликс ",
+    "db" : "DB#1",
     "google_drvie" : {
                 "type": "service_account",
                 "project_id": "databasefelix",
