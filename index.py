@@ -1,11 +1,43 @@
+# -*- coding: utf-8 -*-
+"""
+MIT License
+
+Copyright (c) 2020 reebze, Be3y4uu-K0T
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+__title__     = 'felix-bot'
+__author__    = ['reebze','Be3y4uu-K0T']
+__copyright__ = 'Copyright 2020 (c) 2020 Be3y4uu_K0T'
+__license__   = 'MIT'
+__version__   = '0.2.3'
+__status__    = 'Development'
+
+#======================================
 from discord.ext import commands, tasks
+from discord import logging
 import discord as ds
+import traceback
 import sqlite3
-import asyncio
 
-#from urllib.request import urlopen
-#import git
-
+logging.basicConfig(filename="felix.log", format='{%(asctime)s} [%(levelname)s] | %(message)s', datefmt='%Y-%m-%d|%H:%M:%S')
 bot = commands.Bot(command_prefix = "f!")
 con = sqlite3.connect('server.db')
 sql = con.cursor()
@@ -45,17 +77,16 @@ async def on_raw_reaction_remove(ctx):
         role = ds.utils.get(server.roles, id = data[0][0])
         member = server.get_member(ctx.user_id)
         await member.remove_roles(role)
-        
+       
+@bot.event
+async def on_command_error(ctx, error):
+    logging.error(error)
+    await ctx.send(embed = ds.Embed(colour = ds.Color.red(), description = 'Вы вызвали ошибку!'))
+    
+@bot.event
+async def on_error(event, *args, **kwargs):
+    message = args[0]
+    logging.error(traceback.format_exc())
+    await bot.send_message(message.channel, 'Вы вызвали ошибку!')
+       
 bot.run("NzI4OTg4MjIyMjMwNjI2MzEy.XwCZyg.3I5a98uOfsCZvYLir0DJj8NIgt4")
-
-'''
-@tasks.loop(hours=24)
-async def updates():
-    data = urlopen("https://raw.githubusercontent.com/reebze/felix-bot/master/.version") #пока не может отправлять запрос, потому что репозиторий закрыт
-    for line in data:
-        new_ver = line.decode()
-        break
-    new_ver.rstrip("\n").rstrip("\r")
-    if new_ver > __version__:
-        pass #загрузка новой версии с github
-'''
