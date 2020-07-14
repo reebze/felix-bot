@@ -34,19 +34,17 @@ async def card(ctx, member: ds.Member = None):
 
 @bot.event
 async def on_raw_reaction_add(ctx):
-    for data in sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)):
-        role = ds.utils.get(server.roles, id = data[0])
-        break
-    member = server.get_member(ctx.user_id)
-    await member.add_roles(role)
-    
+    if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)):
+        role = ds.utils.get(server.roles, id = data[0][0])
+        member = server.get_member(ctx.user_id)
+        await member.add_roles(role)
 
 @bot.event
 async def on_raw_reaction_remove(ctx):
-    role_id = list(sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)))[0][0]
-    role    = ds.utils.get(server.roles, id = role_id)
-    member  = server.get_member(ctx.user_id)
-    await member.remove_roles(role)
+    if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)):
+        role = ds.utils.get(server.roles, id = data[0][0])
+        member = server.get_member(ctx.user_id)
+        await member.remove_roles(role)
         
 bot.run("NzI4OTg4MjIyMjMwNjI2MzEy.XwCZyg.3I5a98uOfsCZvYLir0DJj8NIgt4")
 
