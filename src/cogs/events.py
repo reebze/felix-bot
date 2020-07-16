@@ -24,6 +24,7 @@ SOFTWARE.
 """
 #======================================
 from discord.ext import commands
+from datetime import datetime
 from discord import logging
 import discord as ds
 import asyncio
@@ -51,10 +52,11 @@ class EventsCog(commands.Cog, name = 'Events'):
     #    print(f'[ERROR] {error}', file = sys.stderr)
         
     @commands.Cog.listener()
-    async def on_command_error(ctx, error):
+    async def on_command_error(self, ctx, error):
         log.info(error)
         print(f'[ERROR] {error}')
         exception = type(error)
+        message_error = 'Ничего не известно!'
         if exception is commands.errors.MissingPermissions:
             message_error = f'К сожалению, {ctx.message.author.name}, у вас нет прав для этого!'
         elif exception is commands.errors.CheckFailure:
@@ -67,13 +69,15 @@ class EventsCog(commands.Cog, name = 'Events'):
         
         error_embed = ds.Embed(title       = 'Ошибка',
                                timestamp   = datetime.utcnow(),
-                               description = f'```css\n{message_error}```',
+                               description = f'```css\n{message_error}```\n{exception.__name__}',
                                color       = ds.Color.red())
                                     
         error_embed.set_author(name     = 'Упс!',
                                icon_url = ctx.message.author.avatar_url)
-                            
-        error_embed.set_footer(text = error.__name__)
+                               
+        error_embed.set_footer(text     = self.bot.user.name, 
+                               icon_url = self.bot.user.avatar_url)
+        
         error_message = await ctx.send(embed = error_embed)
         await error_message.add_reaction('❔')
     
@@ -91,15 +95,15 @@ class EventsCog(commands.Cog, name = 'Events'):
     
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, ctx):
-        if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?", (ctx.message_id,ctx.emoji.name)):
-            role = ds.utils.get(ctx.guild.roles, id = data[0][0])
+        if data := list(sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?", (ctx.message_id, ctx.emoji.name))):
+            role = ds.utils.get(self.bot.get_guild(ctx.guild_id).roles, id = data[0][0])
             member = ctx.guild.get_member(ctx.user_id)
             await member.add_roles(role)
             
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, ctx):
-        if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)):
-            role = ds.utils.get(ctx.guild.roles, id = data[0][0])
+        if data := list(sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?", (ctx.message_id, ctx.emoji.name))):
+            role = ds.utils.get(self.bot.get_guild(ctx.guild_id).roles, id = data[0][0])
             member = ctx.guild.get_member(ctx.user_id)
             await member.remove_roles(role)
     
