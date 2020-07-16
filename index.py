@@ -89,4 +89,4 @@ async def on_error(event, *args, **kwargs):
     logging.error(traceback.format_exc())
     await bot.send_message(message.channel, 'Вы вызвали ошибку!')
        
-bot.run("NzI4OTg4MjIyMjMwNjI2MzEy.XwCZyg.3I5a98uOfsCZvYLir0DJj8NIgt4")
+bot.run(input("bot $ token => ))
