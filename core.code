@@ -1,0 +1,53 @@
+﻿class Core(commands.Cog):
+    
+    def __init__(self, bot):
+        self.bot = bot
+        
+    #Events
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, ctx):
+        if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?", (ctx.message_id,ctx.emoji.name)):
+            role = ds.utils.get(server.roles, id = data[0][0])
+            member = server.get_member(ctx.user_id)
+            await member.add_roles(role)
+            
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, ctx):
+        if data := sql.execute("SELECT role_id FROM emojis WHERE msg_id = ? and emoji = ?",(ctx.message_id,ctx.emoji.name)):
+            role = ds.utils.get(server.roles, id = data[0][0])
+            member = server.get_member(ctx.user_id)
+            await member.remove_roles(role)
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        logging.error(error)
+        await ctx.send(embed = ds.Embed(colour = ds.Color.red(),description = 'Ошибка в команде!'))
+                                    
+    @commands.Cog.listener()
+    async def on_error(self, event, *args, **kwargs):
+       message = args[0]
+       logging.error(event)
+       await bot.send_message(message.channel, f'Critical error in {event} node at 0x7FFD952285E00') 
+       print(event, file = sys.stderr)
+    
+    #Commands
+    @commands.command(name = 'clear')
+    @commands.has_permissions(manage_messages=True)
+    async def __clear(self, ctx, amount = 1):
+        await ctx.channel.purge(limit = amount)
+        await server.get_channel(728991407662039140).send(embed = ds.Embed(color = ds.Color.gold(),title = 'Сообщения удалены!',description=f'В канале {ctx.channel.mention} удалено {amount} сообщений'))
+    
+    @commands.command(name = 'kick')
+    @commands.has_permissions(kick_members=True)
+    async def __kick(self, ctx, member: ds.Member, *, reason):
+        await member.kick(reason = reason)
+    
+    @commands.command(name = 'ban')
+    @commands.has_permissions(ban_members=True)
+    async def __ban(self, ctx, member: ds.Member, *, reason):
+        await member.ban(reason = reason)
+    
+    @commands.command(name = 'banetime')
+    @commands.has_permissions(ban_members=True)
+    async def __bantime(self, ctx, member: ds.Member, *, reason):
+        pass
