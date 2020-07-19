@@ -1,3 +1,7 @@
+
 @echo off
-cmd /k index.py YOUR_TOKEN
+
+cmd /k src\index.py NzI4OTg4MjIyMjMwNjI2MzEy.XxBFfg.O5RpcZkIEu47kE9zJgiQIYSfd2c
+
 pause
+
