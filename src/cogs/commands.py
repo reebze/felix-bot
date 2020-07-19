@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 MIT License
 
@@ -26,15 +26,14 @@ SOFTWARE.
 from discord.ext import commands
 from datetime import datetime
 from discord import logging
+import database as db
 import discord as ds
 import asyncio
-import sqlite3
 
-db  = sqlite3.connect('server.db')
 logging.basicConfig(filename = "felix.log", 
-                    #stream   = sys.stderr,
+                    #stream  = sys.stderr,
                     format   = '[%(asctime)s] - %(levelname)s] - : %(name)s : %(message)s', 
-                    datefmt  ='%d/%m/%Y#%H:%M:%S')
+                    datefmt  = '%d/%m/%Y#%H:%M:%S')
 log = logging.getLogger(__name__)
 
 class CommandsCog(commands.Cog, name = 'Commands'):
@@ -51,12 +50,17 @@ class CommandsCog(commands.Cog, name = 'Commands'):
             reaction, user = await ctx.bot.wait_for('reaction_add', timeout=10.0, check = check_reaction)
         except asyncio.TimeoutError:
             await info_message.remove_reaction('🗑️', ctx.bot.user)
+            return False
         else:
-            await info_message.delete()
+            try:
+                await info_message.delete()
+            except ds.NotFound:
+                pass
             try:
                 await ctx.message.delete()
-            except:
+            except ds.NotFound:
                 pass
+            return True
         
     @commands.command(name = 'clear')
     @commands.has_permissions(manage_messages=True)
@@ -67,12 +71,13 @@ class CommandsCog(commands.Cog, name = 'Commands'):
             await ctx.channel.send(embed = embed)
             return
         await ctx.message.delete()
-        if member == None:
-            await ctx.channel.purge(limit = amount)
-        else:
-            async for message in ctx.channel.history(limit = amount).filter(lambda message: message.author.id == member.id):
-                await message.delete()
-        message = await ctx.channel.send(embed = ds.Embed(color = ds.Color.gold(), title = 'Сообщения удалены!', description=f'Удалено {amount} сообщений, вызвал {ctx.author.mention}'))
+        check = None
+        if member is not None:
+            check = lambda message: message.author.id == member.id
+        await ctx.channel.purge(limit = amount, check = check)
+        info_embed = ds.Embed(color = ds.Color.gold(), title = 'Сообщения удалены!', description=f'Удалено {amount} сообщений, вызвал {ctx.author.mention}')
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
+        message = await ctx.channel.send(embed = info_embed)
         await self.__del_message(ctx, message)
 
     @commands.command(name = 'clearself')
@@ -83,10 +88,9 @@ class CommandsCog(commands.Cog, name = 'Commands'):
             await ctx.channel.send(embed = embed)
             return
         await ctx.message.delete()
-        async for message in ctx.channel.history(limit = amount).filter(lambda message: message.author.id == ctx.author.id):
-            await message.delete()
+        await ctx.channel.purge(limit = amount, check = (lambda message: message.author.id == ctx.author.id))
         info_embed = ds.Embed(color = ds.Color.gold(), title = 'Сообщения удалены!', description=f'В канале {ctx.channel.mention} удалено {amount} сообщений, вызвал {ctx.author.mention}')
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.channel.send(embed = info_embed)
         await self.__del_message(ctx, message)
 
@@ -96,7 +100,7 @@ class CommandsCog(commands.Cog, name = 'Commands'):
         await member.kick(reason = reason)
         info_embed = ds.Embed(color = ds.Color.gold(), title = f'Кикнут {ban.user.name}#{ban.user.discriminator}!', description = f'Причина: {reason}')
         info_embed.set_thumbnail(url = member.avatar_url)
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.send(embed = info_embed)
         await self.__del_message(ctx, message)
 
@@ -104,9 +108,9 @@ class CommandsCog(commands.Cog, name = 'Commands'):
     @commands.has_permissions(ban_members=True)
     async def __ban(self, ctx, member: ds.Member, *, reason = None):
         await member.ban(reason = reason)
-        info_embed = ds.Embed(title = f'Забенен {ban.user.name}#{ban.user.discriminator}!', description = f'Причина: {reason}')
+        info_embed = ds.Embed(color = ds.Color.gold(), title = f'Забенен {ban.user.name}#{ban.user.discriminator}!', description = f'Причина: {reason}')
         info_embed.set_thumbnail(url = member.avatar_url)
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.send(embed = info_embed)
         await self.__del_message(ctx, message)
 
@@ -117,12 +121,12 @@ class CommandsCog(commands.Cog, name = 'Commands'):
             if (ban.user.name,ban.user.discriminator) == tuple(member.split('#')):
                 await ctx.guild.unban(ban.user)
                 info_embed = ds.Embed(color = ds.Color.gold(), description = f'Разбанен {ban.user.name}#{ban.user.discriminator}!')
-                info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+                info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
                 message = await ctx.send(embed = info_embed)
                 await self.__del_message(ctx, message)
                 return
         info_embed = ds.Embed(color = ds.Color.gold(), description = 'Такой пользователь не забанен или не существует его!')
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.send(embed = info_embed)
         await self.__del_message(ctx, message)
         
@@ -130,26 +134,24 @@ class CommandsCog(commands.Cog, name = 'Commands'):
     @commands.has_permissions(ban_members=True)
     async def __bantime(self, ctx, member: ds.Member, date: (lambda d: datetime.strptime(d, '%d/%m/%y %H:%M').timestamp()), *, reason = None):
         await member.ban(reason = reason)
-        sql = db.cursor()
-        sql.execute('UPDATE users SET ban_date = ? WHERE user_id = ?', (date, member.id))
-        db.commit()
-        sql.close()
-        info_embed = ds.Embed(title = f'Забенен {ban.user.name}#{ban.user.discriminator}!', description = f'Причина: {reason}')
+        with db.sql() as sql:
+            sql.execute('UPDATE users SET ban_date = ? WHERE user_id = ?', (date, member.id))
+        info_embed = ds.Embed(color = ds.Color.gold(), title = f'Забенен {ban.user.name}#{ban.user.discriminator}!', description = f'Причина: {reason}')
         info_embed.set_thumbnail(url = member.avatar_url)
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.send(embed = info_embed)
         await self.__del_message(ctx, message)
         
     @commands.command(name = 'utcnow')
     async def __utcnow(self, ctx):
-        info_embed = ds.Embed(description = f'Сейчас по UTC: {datetime.utcnow()}')
-        info_embed.set_footer(text = ctx.bot.user.name, icon_url = ctx.bot.user.avatar_url)
+        info_embed = ds.Embed(color = ds.Color.gold(), description = f'Сейчас по UTC: {datetime.utcnow()}')
+        info_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
         message = await ctx.send(embed = info_embed)
         await self.__del_message(ctx, message)
         
-    @commands.command(name = 'e2r')
+    @commands.command(name = 'emoji2role')
     @commands.has_permissions(administrator=True)
-    async def __e2r(self, ctx):
+    async def __emoji_to_role(self, ctx):
         pass
 
 def setup(bot):
