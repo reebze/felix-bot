@@ -34,7 +34,6 @@ __status__    = 'Development'
 import discord as ds
 import asyncio
 import sqlite3
-import pytz
 import sys
 
 from discord.ext import commands, tasks
@@ -45,22 +44,22 @@ if len(sys.argv) <= 1:
     raise ValueError('Token is empty') from None
 
 logging.basicConfig(filename = "felix.log", 
-                    #stream   = sys.stderr,
+                    #stream  = sys.stderr,
                     format   = '[%(asctime)s] - %(levelname)s] - : %(name)s : %(message)s', 
-                    datefmt  ='%d/%m/%Y#%H:%M:%S')
+                    datefmt  = '%d/%m/%Y#%H:%M:%S')
                     
 bot = commands.Bot(command_prefix = "f!")
-db  = sqlite3.connect('server.db')
-sql = db.cursor()
 log = logging.getLogger(__name__)
 cogs = ['events',
-        'commands',]
-        #'games',]
+        'commands',
+        'music',
+        'games',]
           
 if __name__ == '__main__':
     for cog in cogs:
         bot.load_extension(f'cogs.{cog}')
-    
-    log.debug('bot $ Felix starting')
+    bot.felix_server  = 728988042987307091
+    bot.felix_channel = 728991407662039140
+    log.info('bot $ Felix starting')
     print('bot $ Felix starting')
-    bot.run(sys.argv[1], bot = True, reconnect = True)   
+    bot.run(sys.argv[1], bot = True, reconnect = True)
