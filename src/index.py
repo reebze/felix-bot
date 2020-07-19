@@ -27,7 +27,7 @@ __title__     = 'felix-bot'
 __author__    = ['reebze','Be3y4uu-K0T']
 __copyright__ = 'Copyright 2020 (c) 2020 Be3y4uu_K0T'
 __license__   = 'MIT'
-__version__   = '0.2.4'
+__version__   = '0.2.6'
 __status__    = 'Development'
 
 #======================================
