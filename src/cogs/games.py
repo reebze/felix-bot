@@ -22,17 +22,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+__title__     = 'felix-bot/games'
+__author__    = ['reebze','Be3y4uu-K0T']
+__copyright__ = 'Copyright 2020 (c) 2020 Be3y4uu_K0T'
+__license__   = 'MIT'
+__version__   = '0.0.1'
+__status__    = 'Development'
+
 #======================================
 from discord.ext import commands
 from datetime import datetime
 from discord import logging
-import database as db
+import exts.database as db
 import discord as ds
 import asyncio
 
-logging.basicConfig(filename = "felix.log", 
+logging.basicConfig(filename = r"src\exts\felix.log", 
                     #stream  = sys.stderr,
-                    format   = '[%(asctime)s] - %(levelname)s] - : %(name)s : %(message)s', 
+                    format   = '[%(asctime)s] - %(levelname)s - : %(name)s : %(message)s', 
                     datefmt  = '%d/%m/%Y#%H:%M:%S')
 log = logging.getLogger(__name__)
 
