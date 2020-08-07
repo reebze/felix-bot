@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 MIT License
 
@@ -32,11 +32,16 @@ __status__    = 'Development'
 
 #======================================
 from discord.ext import commands
+from contextlib import suppress
 from datetime import datetime
 from discord import logging
+from PIL import Image
+from os import walk
 import exts.database as db
 import discord as ds
 import asyncio
+import io
+
 
 logging.basicConfig(filename = r"src\exts\felix.log", 
                     #stream  = sys.stderr,
@@ -60,58 +65,56 @@ class GamesCog(commands.Cog, name = 'Games'):
             await info_message.remove_reaction('🗑️', ctx.bot.user)
             return False
         else:
-            try:
+            with suppress(ds.NotFound):
                 await info_message.delete()
-            except ds.NotFound:
-                pass
-            try:
                 await ctx.message.delete()
-            except ds.NotFound:
-                pass
             return True
         
     @commands.command(name = 'playgame')
     async def __play_in_game(self, ctx):
+        game_imgs = {filename[:-4]:Image.open(rf'src\content\{filename}') for filename in tuple(walk(r'src\content'))[0][2] if filename.endswith('.png')}
+        count = 5
+        game_img = Image.new('RGBA', (count*128,count*128), (32,32,32))
+        for coord,img in enumerate(['0g0000_0024','0g0000_0000','0g0000_0023','0g0000_0000','0g0000_0001',
+                                    '0g0000_0000','0g0000_0006','0g0000_0011','0g0000_0012','0g0000_0000',
+                                    '0g0000_0000','0g0000_0007','0g0003_0000','0g0000_0014','0g0000_0018',
+                                    '0g0000_0000','0g0000_0008','0g0000_0009','0g0000_0013','0g0000_0001',
+                                    '0g0000_0005','0g0000_0005','0g0000_0003','0g0000_0001','0g0000_0001',]):
+            game_img.paste(game_imgs[img],(coord%count * 128,coord//count * 128)) #загрузка плиток
         
-        red    = ':red_square:'
-        orange = ':orange_square:'
-        yellow = ':yellow_square:'
-        green  = ':green_square:'
-        blue   = ':blue_square:'
-        purple = ':purple_square:'
-        brown  = ':brown_square:'
-        black  = ':black_large_square:'
-        neg    = ':negative_squared_cross_mark:'
-        pos    = ':white_check_mark:'
-        player = '<:felix_game:734415021425164330>'
-        game_field = [ [red,  red,    red,    red,    red,    red,    red,],
-                       [red,  player, black,  black,  black,  black,  red,],
-                       [red,  black,  black,  black,  black,  black,  red,],
-                       [red,  black,  black,  black,  black,  black,  red,],
-                       [red,  neg,    black,  black,  black,  black,  red,],
-                       [red,  black,  black,  black,  black,  pos,    red,],
-                       [red,  red,    red,    red,    red,    red,    red,],
-               ]
-        game_embed = ds.Embed(color = ds.Color.green(), title = 'Уровень # 1!', description = '\n'.join([''.join(line) for line in game_field]))
+        for coord in range(count*count):
+            game_img.paste(game_imgs['0g0001_0000'], (coord%count * 128,coord//count * 128) , game_imgs['0g0001_0000']) #эффект старого телевизора
+
+        with io.BytesIO() as img_binary:
+            game_img.save(img_binary, format='PNG')
+            img_binary.seek(0)
+            game_file = ds.File(img_binary, filename = 'main_screen.png')
+        game_embed = ds.Embed(color = ds.Color.green(), title = 'Уровень # 1!')
         game_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
-        game_message = await ctx.send(embed = game_embed)
+        game_message = await ctx.send(embed = game_embed, file = game_file)
         asyncio.gather(*[game_message.add_reaction(emoji) for emoji in '⬅⬆➡⬇🔄'])
+        
         def check_reaction(reaction, user):
-            return user == ctx.message.author and reaction.message.id == game_message.id and reaction.emoji.name in '⬅⬆➡⬇🔄'
+            return user == ctx.message.author and reaction.message.id == game_message.id and reaction.emoji in '⬅⬆➡⬇🔄'
+
+        async def try_except(function, *exceptions):
+            try:
+                return await function
+            except exceptions:
+                return False
             
-        try:
-            reaction, user = await ctx.bot.wait_for('reaction_add', timeout = 25.0, check = check_reaction)
-        except asyncio.TimeoutError:
-            game_embed = ds.Embed(color = ds.Color.gold(), description = 'Игра окончена!')
-            game_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
-            info_message = await ctx.send(embed = game_embed)
-            if await self.__del_message(ctx, info_message):
+        with suppress(ds.NotFound):
+            while message := await try_except(ctx.fetch_message(game_message.id), ds.NotFound):
                 try:
+                    reaction, user = await ctx.bot.wait_for('reaction_add', timeout = 125.0, check = check_reaction)
+                except asyncio.TimeoutError:
+                    game_embed = ds.Embed(color = ds.Color.gold(), description = 'Игра окончена!')
+                    game_embed.set_footer(text = ctx.me.name, icon_url = ctx.me.avatar_url)
+                    info_message = await ctx.send(embed = game_embed)
+                    await self.__del_message(ctx, info_message)
                     await game_message.delete()
-                except ds.NotFound:
-                    pass
-        else:
-            pass
+                else:
+                    pass #пока ещё ничего нет       
         
 def setup(bot):
     bot.add_cog(GamesCog(bot))
