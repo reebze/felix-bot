@@ -75,7 +75,7 @@ def sql():
     finally:
         sql_cursor.close()
         db.commit()
-#=======================================
+#==============[Events]=================
 @bot.event
 async def on_ready():
     await bot.change_presence(status=ds.Status.online, activity=ds.Game(name="In development on GitHub"))
@@ -128,6 +128,7 @@ async def on_command_error(ctx, error):
     message = await ctx.send(embed=embed)
     await delete_message(ctx, message)
 
+@bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
@@ -176,6 +177,7 @@ async def on_raw_reaction_remove(ctx):
             message = await guild.get_channel(ctx.channel_id).fetch_message(ctx.message_id)
             cur.execute('UPDATE members SET art_points=art_points-1 WHERE member_id=?', [message.author.id])
 
+#=============[Commands]================
 @bot.command()
 @commands.has_permissions(manage_messages=True)
 async def clear(ctx, amount: abs=5, member: ds.Member=None):
@@ -384,6 +386,7 @@ async def __resume(self, ctx):
         message = await ctx.send(embed=embed)
     await delete_message(ctx, message)
 
+#============[Utils]====================
 @tasks.loop(minutes=1)
 async def check_unban():
     with sql() as cur:
